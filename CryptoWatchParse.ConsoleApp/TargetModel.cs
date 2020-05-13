@@ -1,13 +1,21 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace CryptoWatchParse.ConsoleApp
 {
     public class TargetModel
     {
+        public TargetModel(DateTimeOffset createdAt, string exchange, string assetPair, decimal bid, decimal ask, decimal mid, decimal volEur)
+        {
+            CreatedAt = createdAt;
+            Exchange = exchange;
+            AssetPair = assetPair;
+            Bid = bid;
+            Ask = ask;
+            Mid = mid;
+            VolEur = volEur;
+        }
+
         [JsonProperty("CreatedAt")]
         public DateTimeOffset CreatedAt { get; set; }
 
@@ -18,49 +26,18 @@ namespace CryptoWatchParse.ConsoleApp
         public string AssetPair { get; set; }
 
         [JsonProperty("Bid")]
-        public double Bid { get; set; }
+        public decimal Bid { get; set; }
 
         [JsonProperty("Ask")]
-        public double Ask { get; set; }
+        public decimal Ask { get; set; }
 
         [JsonProperty("Mid")]
-        public double Mid { get; set; }
+        public decimal Mid { get; set; }
 
         [JsonProperty("VolEur")]
-        public long VolEur { get; set; }
+        public decimal VolEur { get; set; }
 
         [JsonProperty("Source")]
         public string Source { get; set; } = "cryptowat.ch OHLC";
-    }
-
-    public static class TargetModelFactory
-    {
-        /// <summary>
-        /// [CloseTime,
-        /// OpenPrice,
-        /// HighPrice,
-        /// LowPrice,
-        /// ClosePrice,
-        /// Volume,
-        /// QuoteVolume]
-        /// </summary>
-        public static IEnumerable<TargetModel> Create(OhlcCandlestickModel model, string tmpOutputFile)
-        {
-            var tmp = model.Result.Resolutions.Select(x => new
-            {
-                CloseTime = x[0],
-                CloseTimeIso = DateTimeOffset.FromUnixTimeSeconds((long)x[0]),
-                OpenPrice = x[1],
-                ClosePrice = x[4]
-            });
-
-            if (tmpOutputFile != null)
-            {
-                var tmpJson = JsonConvert.SerializeObject(tmp);
-                File.WriteAllText(tmpOutputFile, tmpJson);
-            }
-
-            return null;
-        }
     }
 }

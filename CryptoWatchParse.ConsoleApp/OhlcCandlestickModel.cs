@@ -39,6 +39,6 @@ namespace CryptoWatchParse.ConsoleApp
         /// QuoteVolume]
         /// </summary>
         [JsonProperty("86400")]
-        public double[][] Resolutions { get; set; }
+        public decimal[][] Resolutions { get; set; }
     }
 }
