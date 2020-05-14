@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -37,7 +38,10 @@ namespace CryptoWatchParse.ConsoleApp
             string targetFileMeta = GetTargetOutputFileMeta();
             //DeleteOutputFilesIfExistFiles(targetFileBitstamp, targetFileMeta);
 
-            var ohlcCandlestickModel = GetDailyCandle().GetAwaiter().GetResult();
+            var from = new DateTimeOffset(DateTime.SpecifyKind(new DateTime(2018, 1, 1), DateTimeKind.Utc));
+            var to = new DateTimeOffset(DateTime.UtcNow);
+
+            var ohlcCandlestickModel = GetDailyCandle(from.ToUnixTimeSeconds(), to.ToUnixTimeSeconds()).GetAwaiter().GetResult();
             var bitstampResult = TargetModelFactory.Create(ohlcCandlestickModel, "bitstamp", 0, GetTmpOutputFile());
             var krakenResult = TargetModelFactory.Create(ohlcCandlestickModel, "kraken", 0, GetTmpOutputFile());
             var metaResult = TargetModelFactory.Create(ohlcCandlestickModel, "meta", 0.0075M, null);
@@ -47,7 +51,7 @@ namespace CryptoWatchParse.ConsoleApp
             File.WriteAllLines(targetFileMeta, metaResult.Select(row => JsonConvert.SerializeObject(row, jsonSettings)));
         }
 
-        public static async Task<OhlcCandlestickModel> GetDailyCandle(long from = 1546300800, long to = 1577836800)
+        public static async Task<OhlcCandlestickModel> GetDailyCandle(long from, long to)
         {
             using (var httpClient = CreateHttpClient())
             {
