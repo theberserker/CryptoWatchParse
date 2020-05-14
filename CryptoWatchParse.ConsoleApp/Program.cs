@@ -21,6 +21,9 @@ namespace CryptoWatchParse.ConsoleApp
         private static string GetTargetOutputFileBitstamp()
             => Path.Combine(BaseOutputFolder, "target_bitstamp.json");
 
+        private static string GetTargetOutputFileKraken()
+            => Path.Combine(BaseOutputFolder, "target_kraken.json");
+
         private static string GetTargetOutputFileMeta()
             => Path.Combine(BaseOutputFolder, "target_meta.json");
 
@@ -30,14 +33,17 @@ namespace CryptoWatchParse.ConsoleApp
         static void Main(string[] args)
         {
             string targetFileBitstamp = GetTargetOutputFileBitstamp();
+            string targetFileKraken = GetTargetOutputFileKraken();
             string targetFileMeta = GetTargetOutputFileMeta();
             //DeleteOutputFilesIfExistFiles(targetFileBitstamp, targetFileMeta);
 
             var ohlcCandlestickModel = GetDailyCandle().GetAwaiter().GetResult();
             var bitstampResult = TargetModelFactory.Create(ohlcCandlestickModel, "bitstamp", 0, GetTmpOutputFile());
+            var krakenResult = TargetModelFactory.Create(ohlcCandlestickModel, "kraken", 0, GetTmpOutputFile());
             var metaResult = TargetModelFactory.Create(ohlcCandlestickModel, "meta", 0.0075M, null);
 
             File.WriteAllLines(targetFileBitstamp, bitstampResult.Select(row => JsonConvert.SerializeObject(row, jsonSettings)));
+            File.WriteAllLines(targetFileKraken, krakenResult.Select(row => JsonConvert.SerializeObject(row, jsonSettings)));
             File.WriteAllLines(targetFileMeta, metaResult.Select(row => JsonConvert.SerializeObject(row, jsonSettings)));
         }
 
