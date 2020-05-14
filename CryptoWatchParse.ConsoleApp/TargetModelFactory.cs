@@ -35,13 +35,12 @@ namespace CryptoWatchParse.ConsoleApp
             }
 
             var targetVolumes = new[] {1M, 10, 100, 1000, 10_000};
-            //var priceOption = new Func<IntermediateModel, decimal>[] {x => x.OpenPrice, x => x.ClosePrice};
 
             // Za vsak record zgeneriras 5 target recordov z drugacnimi VolEur, ampak z istimi stevilkami.
             // V tvojem primeru, Bid = Mid = Ask. Open price ima timestamp polne ure (npr. 15:00:00),
             // close price pa ima timestamp ene sekunde pred polno uro (npr. 15:59:59)
             //
-            // This means - 5 records for each target volume and each of [OpenPrice, ClosedPrice] => 10 records per OhlcCandlestickModel.Result.Resolution
+            // In other words: 5 records for each target volume and each of [OpenPrice, ClosedPrice] => 10 records per OhlcCandlestickModel.Result.Resolution
             var perVolumeResults = intermediateModels
                 .SelectMany(im =>
                 {
@@ -50,7 +49,7 @@ namespace CryptoWatchParse.ConsoleApp
                     var closeTime = im.CloseTimeIso.Add(baseTimeOffset.Add(new TimeSpan(0, 59, 59)));
 
                     return targetVolumes
-                        .Select(vol => ToTargetModel(vol, exchange, pricePadding, im.OpenPrice, openTime))
+                        .Select(vol => ToTargetModel(vol, exchange, im.OpenPrice, pricePadding, openTime))
                         .Union(targetVolumes.Select(vol => ToTargetModel(vol, exchange, im.ClosePrice, pricePadding, closeTime)));
                 });
 

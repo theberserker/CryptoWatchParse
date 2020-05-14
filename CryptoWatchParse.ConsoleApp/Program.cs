@@ -25,12 +25,7 @@ namespace CryptoWatchParse.ConsoleApp
             => Path.Combine(BaseOutputFolder, "target_meta.json");
 
         private static readonly JsonSerializerSettings jsonSettings
-            = new JsonSerializerSettings
-            {
-                DateFormatHandling = DateFormatHandling.IsoDateFormat ,
-                DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss.FFF'Z'"
-                //DateFormatString = "u"
-            };
+            = new JsonSerializerSettings { DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss.fff'Z'" };
 
         static void Main(string[] args)
         {
@@ -40,7 +35,7 @@ namespace CryptoWatchParse.ConsoleApp
 
             var ohlcCandlestickModel = GetDailyCandle().GetAwaiter().GetResult();
             var bitstampResult = TargetModelFactory.Create(ohlcCandlestickModel, "bitstamp", 0, GetTmpOutputFile());
-            var metaResult = TargetModelFactory.Create(ohlcCandlestickModel, "meta", 0.75M, GetTmpOutputFile());
+            var metaResult = TargetModelFactory.Create(ohlcCandlestickModel, "meta", 0.0075M, null);
 
             File.WriteAllLines(targetFileBitstamp, bitstampResult.Select(row => JsonConvert.SerializeObject(row, jsonSettings)));
             File.WriteAllLines(targetFileMeta, metaResult.Select(row => JsonConvert.SerializeObject(row, jsonSettings)));
