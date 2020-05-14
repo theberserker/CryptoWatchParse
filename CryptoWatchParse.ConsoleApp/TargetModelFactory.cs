@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using Newtonsoft.Json;
 
 namespace CryptoWatchParse.ConsoleApp
@@ -49,12 +50,23 @@ namespace CryptoWatchParse.ConsoleApp
                     var closeTime = im.CloseTimeIso.Add(baseTimeOffset.Add(new TimeSpan(0, 59, 59)));
 
                     return targetVolumes
-                        .Select(vol => im.ToOpenBitstampModel(vol, exchange, pricePadding, openTime))
-                        .Union(targetVolumes.Select(vol => im.ToClosedBitstampModel(vol, exchange, pricePadding, closeTime)));
+                        .Select(vol => ToTargetModel(vol, exchange, pricePadding, im.OpenPrice, openTime))
+                        .Union(targetVolumes.Select(vol => ToTargetModel(vol, exchange, im.ClosePrice, pricePadding, closeTime)));
                 });
 
             return perVolumeResults;
         }
+
+        public static TargetModel ToTargetModel(decimal volume, string exchange, decimal price, decimal pricePadding, DateTime priceDateTime)
+        {
+            var padding = GetPriceFactor(pricePadding);
+            return pricePadding == decimal.Zero
+                ? new TargetModel(priceDateTime, exchange, "bcheur", price, price, price, volume)
+                : new TargetModel(priceDateTime, exchange, "bcheur", price * padding.bid, price * padding.ask, price, volume);
+        }
+
+        private static (decimal bid, decimal ask) GetPriceFactor(decimal pricePadding)
+            => ((1 - pricePadding), (1 + pricePadding));
     }
 
     public class IntermediateModel
@@ -63,24 +75,5 @@ namespace CryptoWatchParse.ConsoleApp
         public DateTime CloseTimeIso { get; set; }
         public decimal OpenPrice { get; set; }
         public decimal ClosePrice { get; set; }
-
-        public TargetModel ToOpenBitstampModel(decimal volume, string exchange, decimal pricePadding, DateTime priceDateTime)
-        {
-            var padding = GetPadding(pricePadding);
-            return pricePadding == decimal.Zero
-                ? new TargetModel(priceDateTime, exchange, "bcheur", OpenPrice, OpenPrice, OpenPrice, volume)
-                : new TargetModel(priceDateTime, exchange, "bcheur", OpenPrice * padding.bid, OpenPrice * padding.ask, OpenPrice, volume);
-        }
-
-        public TargetModel ToClosedBitstampModel(decimal volume, string exchange, decimal pricePadding, DateTime priceDateTime)
-        {
-            var padding = GetPadding(pricePadding);
-            return pricePadding == decimal.Zero
-                ? new TargetModel(priceDateTime, exchange, "bcheur", ClosePrice, ClosePrice, ClosePrice, volume)
-                : new TargetModel(priceDateTime, exchange, "bcheur", ClosePrice * padding.bid, ClosePrice * padding.ask, ClosePrice, volume);
-        }
-
-        private (decimal bid, decimal ask) GetPadding(decimal pricePadding)
-            => ((1 - pricePadding), ask:(1 + pricePadding));
     }
 }
