@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -17,11 +18,31 @@ namespace CryptoWatchParse.ConsoleApp
         private static string GetTmpOutputFile()
             => Path.Combine(BaseOutputFolder, "tmp_model.json");
 
-        
+        private static string GetTargetOutputFile()
+            => Path.Combine(BaseOutputFolder, "target.json");
+
+        private static readonly JsonSerializerSettings jsonSettings
+            = new JsonSerializerSettings
+            {
+                DateFormatHandling = DateFormatHandling.IsoDateFormat ,
+                DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss.FFF'Z'"
+                //DateFormatString = "u"
+
+            };
+
         static void Main(string[] args)
         {
             var ohlcCandlestickModel = GetDailyCandle().GetAwaiter().GetResult();
-            TargetModelFactory.Create(ohlcCandlestickModel, GetTmpOutputFile());
+            var result = TargetModelFactory.Create(ohlcCandlestickModel, GetTmpOutputFile());
+            string targetFile = GetTargetOutputFile();
+
+            //File.WriteAllText(GetTargetOutputFile(), JsonConvert.SerializeObject(result, jsonSettings));
+            if (File.Exists(targetFile))
+            {
+                File.Delete(targetFile);
+            }
+
+            File.AppendAllLines(targetFile, result.Select(row => JsonConvert.SerializeObject(row, jsonSettings)));
         }
 
         public static async Task<OhlcCandlestickModel> GetDailyCandle(long from = 1546300800, long to = 1577836800)
