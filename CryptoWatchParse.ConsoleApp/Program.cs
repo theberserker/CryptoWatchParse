@@ -18,8 +18,11 @@ namespace CryptoWatchParse.ConsoleApp
         private static string GetTmpOutputFile()
             => Path.Combine(BaseOutputFolder, "tmp_model.json");
 
-        private static string GetTargetOutputFile()
-            => Path.Combine(BaseOutputFolder, "target.json");
+        private static string GetTargetOutputFileBitstamp()
+            => Path.Combine(BaseOutputFolder, "target_bitstamp.json");
+
+        private static string GetTargetOutputFileMeta()
+            => Path.Combine(BaseOutputFolder, "target_meta.json");
 
         private static readonly JsonSerializerSettings jsonSettings
             = new JsonSerializerSettings
@@ -27,22 +30,20 @@ namespace CryptoWatchParse.ConsoleApp
                 DateFormatHandling = DateFormatHandling.IsoDateFormat ,
                 DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss.FFF'Z'"
                 //DateFormatString = "u"
-
             };
 
         static void Main(string[] args)
         {
+            string targetFileBitstamp = GetTargetOutputFileBitstamp();
+            string targetFileMeta = GetTargetOutputFileMeta();
+            //DeleteOutputFilesIfExistFiles(targetFileBitstamp, targetFileMeta);
+
             var ohlcCandlestickModel = GetDailyCandle().GetAwaiter().GetResult();
-            var result = TargetModelFactory.Create(ohlcCandlestickModel, GetTmpOutputFile());
-            string targetFile = GetTargetOutputFile();
+            var bitstampResult = TargetModelFactory.Create(ohlcCandlestickModel, "bitstamp", 0, GetTmpOutputFile());
+            var metaResult = TargetModelFactory.Create(ohlcCandlestickModel, "meta", 0.75M, GetTmpOutputFile());
 
-            //File.WriteAllText(GetTargetOutputFile(), JsonConvert.SerializeObject(result, jsonSettings));
-            if (File.Exists(targetFile))
-            {
-                File.Delete(targetFile);
-            }
-
-            File.AppendAllLines(targetFile, result.Select(row => JsonConvert.SerializeObject(row, jsonSettings)));
+            File.WriteAllLines(targetFileBitstamp, bitstampResult.Select(row => JsonConvert.SerializeObject(row, jsonSettings)));
+            File.WriteAllLines(targetFileMeta, metaResult.Select(row => JsonConvert.SerializeObject(row, jsonSettings)));
         }
 
         public static async Task<OhlcCandlestickModel> GetDailyCandle(long from = 1546300800, long to = 1577836800)
@@ -66,6 +67,17 @@ namespace CryptoWatchParse.ConsoleApp
         {
             var httpClient = new HttpClient() { BaseAddress = new Uri("https://api.cryptowat.ch/") };
             return httpClient;
+        }
+
+        private static void DeleteOutputFilesIfExistFiles(params string[] targetFiles)
+        {
+            foreach (var targetFile in targetFiles)
+            {
+                if (File.Exists(targetFile))
+                {
+                    File.Delete(targetFile);
+                }
+            }
         }
     }
 }

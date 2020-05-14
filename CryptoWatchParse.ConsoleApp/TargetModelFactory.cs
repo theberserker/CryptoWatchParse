@@ -17,7 +17,7 @@ namespace CryptoWatchParse.ConsoleApp
         /// Volume,
         /// QuoteVolume]
         /// </summary>
-        public static IEnumerable<TargetModel> Create(OhlcCandlestickModel model, string tmpOutputFile)
+        public static IEnumerable<TargetModel> Create(OhlcCandlestickModel model, string exchange, decimal pricePadding, string tmpOutputFile)
         {
             var intermediateModels = model.Result.Resolutions.Select(x => new IntermediateModel
             {
@@ -34,11 +34,12 @@ namespace CryptoWatchParse.ConsoleApp
             }
 
             var targetVolumes = new[] {1M, 10, 100, 1000, 10_000};
-            //var priceOption = new Expression<Func<IntermediateModel, decimal>>[] {x => x.OpenPrice, x => x.ClosePrice};
+            //var priceOption = new Func<IntermediateModel, decimal>[] {x => x.OpenPrice, x => x.ClosePrice};
 
             // Za vsak record zgeneriras 5 target recordov z drugacnimi VolEur, ampak z istimi stevilkami.
             // V tvojem primeru, Bid = Mid = Ask. Open price ima timestamp polne ure (npr. 15:00:00),
             // close price pa ima timestamp ene sekunde pred polno uro (npr. 15:59:59)
+            //
             // This means - 5 records for each target volume and each of [OpenPrice, ClosedPrice] => 10 records per OhlcCandlestickModel.Result.Resolution
             var perVolumeResults = intermediateModels
                 .SelectMany(im =>
@@ -48,8 +49,8 @@ namespace CryptoWatchParse.ConsoleApp
                     var closeTime = im.CloseTimeIso.Add(baseTimeOffset.Add(new TimeSpan(0, 59, 59)));
 
                     return targetVolumes
-                        .Select(vol => im.ToOpenBitstampModel(vol, openTime))
-                        .Union(targetVolumes.Select(vol => im.ToClosedBitstampModel(vol, closeTime)));
+                        .Select(vol => im.ToOpenBitstampModel(vol, exchange, pricePadding, openTime))
+                        .Union(targetVolumes.Select(vol => im.ToClosedBitstampModel(vol, exchange, pricePadding, closeTime)));
                 });
 
             return perVolumeResults;
@@ -63,14 +64,23 @@ namespace CryptoWatchParse.ConsoleApp
         public decimal OpenPrice { get; set; }
         public decimal ClosePrice { get; set; }
 
-        public TargetModel ToOpenBitstampModel(decimal volume, DateTime priceDateTime)
+        public TargetModel ToOpenBitstampModel(decimal volume, string exchange, decimal pricePadding, DateTime priceDateTime)
         {
-            return new TargetModel(priceDateTime, "bitstamp", "bcheur", OpenPrice, OpenPrice, OpenPrice, volume);
+            var padding = GetPadding(pricePadding);
+            return pricePadding == decimal.Zero
+                ? new TargetModel(priceDateTime, exchange, "bcheur", OpenPrice, OpenPrice, OpenPrice, volume)
+                : new TargetModel(priceDateTime, exchange, "bcheur", OpenPrice * padding.bid, OpenPrice * padding.ask, OpenPrice, volume);
         }
 
-        public TargetModel ToClosedBitstampModel(decimal volume, DateTime priceDateTime)
+        public TargetModel ToClosedBitstampModel(decimal volume, string exchange, decimal pricePadding, DateTime priceDateTime)
         {
-            return new TargetModel(priceDateTime, "bitstamp", "bcheur", ClosePrice, ClosePrice, ClosePrice, volume);
+            var padding = GetPadding(pricePadding);
+            return pricePadding == decimal.Zero
+                ? new TargetModel(priceDateTime, exchange, "bcheur", ClosePrice, ClosePrice, ClosePrice, volume)
+                : new TargetModel(priceDateTime, exchange, "bcheur", ClosePrice * padding.bid, ClosePrice * padding.ask, ClosePrice, volume);
         }
+
+        private (decimal bid, decimal ask) GetPadding(decimal pricePadding)
+            => ((1 - pricePadding), ask:(1 + pricePadding));
     }
 }
