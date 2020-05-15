@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace CryptoWatchParse.ConsoleApp
 {
     class Program
     {
-        private static readonly string BaseOutputFolder = @"C:\tmp";
+        private static readonly string BaseOutputFolder = @"C:\Users\Andrej Spilak\Downloads\bchdata";
 
         private static string GetOhlcRawOutputPath(long from, long to) 
             => Path.Combine(BaseOutputFolder, $"cryptowatch_ohlc_{from}_{to}.json");
@@ -32,6 +33,41 @@ namespace CryptoWatchParse.ConsoleApp
             = new JsonSerializerSettings { DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss.fff'Z'" };
 
         static void Main(string[] args)
+        {
+            MainDataTransformOnly();
+            //MainCryptoWatch();
+        }
+
+        public static void MainDataTransformOnly()
+        {
+            var outDir = Path.Combine(BaseOutputFolder, "out");
+            var files = Directory.GetFiles(BaseOutputFolder);
+            foreach (var file in files)
+            {
+                var fileName = Path.GetFileName(file);
+                Console.WriteLine($"{DateTime.Now.TimeOfDay}: Starting writing new file {fileName}.");
+                var outFilePath = Path.Combine(outDir, fileName);
+                DeleteFilesIfExist(outFilePath);
+
+                var lines = File.ReadAllLines(file);
+                var mutatedLines = new List<string>();
+                foreach (var line in lines)
+                {
+                    var mutableModel = JsonConvert.DeserializeObject<TargetModel>(line);
+                    var spreadMultiplier = TargetModelFactory.GetPriceFactor(0.0075M);
+                    mutableModel.Exchange = "meta";
+                    mutableModel.Ask = mutableModel.Ask * spreadMultiplier.ask;
+                    mutableModel.Bid = mutableModel.Bid * spreadMultiplier.bid;
+                    mutableModel.Source = "Bitstamp +0.75%";
+
+                    mutatedLines.Add(JsonConvert.SerializeObject(mutableModel, jsonSettings));
+                }
+                File.WriteAllLines(outFilePath, mutatedLines);
+                Console.WriteLine($"{DateTime.Now.TimeOfDay}:Done writing new file {fileName}");
+            }
+        }
+
+        public static void MainCryptoWatch()
         {
             string targetFileBitstamp = GetTargetOutputFileBitstamp();
             string targetFileKraken = GetTargetOutputFileKraken();
@@ -76,7 +112,7 @@ namespace CryptoWatchParse.ConsoleApp
             return httpClient;
         }
 
-        private static void DeleteOutputFilesIfExistFiles(params string[] targetFiles)
+        private static void DeleteFilesIfExist(params string[] targetFiles)
         {
             foreach (var targetFile in targetFiles)
             {

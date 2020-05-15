@@ -9,6 +9,8 @@ namespace CryptoWatchParse.ConsoleApp
 {
     public static class TargetModelFactory
     {
+        public static decimal[] targetVolumes = new[] { 1M, 10, 100, 1000, 10_000 };
+
         /// <summary>
         /// [CloseTime,
         /// OpenPrice,
@@ -33,8 +35,6 @@ namespace CryptoWatchParse.ConsoleApp
                 var tmpJson = JsonConvert.SerializeObject(intermediateModels);
                 File.WriteAllText(tmpOutputFile, tmpJson);
             }
-
-            var targetVolumes = new[] {1M, 10, 100, 1000, 10_000};
 
             // Za vsak record zgeneriras 5 target recordov z drugacnimi VolEur, ampak z istimi stevilkami.
             // V tvojem primeru, Bid = Mid = Ask. Open price ima timestamp polne ure (npr. 15:00:00),
@@ -64,7 +64,7 @@ namespace CryptoWatchParse.ConsoleApp
                 : new TargetModel(priceDateTime, exchange, "bcheur", price * padding.bid, price * padding.ask, price, volume);
         }
 
-        private static (decimal bid, decimal ask) GetPriceFactor(decimal pricePadding)
+        public static (decimal bid, decimal ask) GetPriceFactor(decimal pricePadding)
             => ((1 - pricePadding), (1 + pricePadding));
     }
 
