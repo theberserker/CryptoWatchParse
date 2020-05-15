@@ -2,14 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using Newtonsoft.Json;
 
 namespace CryptoWatchParse.ConsoleApp
 {
     public static class TargetModelFactory
     {
-        public static decimal[] targetVolumes = new[] { 1M, 10, 100, 1000, 10_000 };
+        public static decimal[] TargetVolumes = new[] { 1M, 10, 100, 1000, 10_000 };
 
         /// <summary>
         /// [CloseTime,
@@ -48,9 +47,9 @@ namespace CryptoWatchParse.ConsoleApp
                     var openTime = im.CloseTimeIso.Add(baseTimeOffset);
                     var closeTime = im.CloseTimeIso.Add(baseTimeOffset.Add(new TimeSpan(0, 23, 59, 59, 999)));
 
-                    return targetVolumes
+                    return TargetVolumes
                         .Select(vol => ToTargetModel(vol, exchange, im.OpenPrice, pricePadding, openTime))
-                        .Union(targetVolumes.Select(vol => ToTargetModel(vol, exchange, im.ClosePrice, pricePadding, closeTime)));
+                        .Union(TargetVolumes.Select(vol => ToTargetModel(vol, exchange, im.ClosePrice, pricePadding, closeTime)));
                 });
 
             return perVolumeResults;

@@ -34,7 +34,7 @@ namespace CryptoWatchParse.ConsoleApp
 
         static void Main(string[] args)
         {
-            MainDataTransformOnly();
+            //MainDataTransformOnly();
             //MainCryptoWatch();
         }
 
