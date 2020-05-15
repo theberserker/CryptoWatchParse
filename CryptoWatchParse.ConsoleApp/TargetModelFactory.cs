@@ -44,9 +44,9 @@ namespace CryptoWatchParse.ConsoleApp
             var perVolumeResults = intermediateModels
                 .SelectMany(im =>
                 {
-                    var baseTimeOffset = TimeSpan.FromHours(15);
+                    var baseTimeOffset = TimeSpan.FromDays(-1);
                     var openTime = im.CloseTimeIso.Add(baseTimeOffset);
-                    var closeTime = im.CloseTimeIso.Add(baseTimeOffset.Add(new TimeSpan(0, 59, 59)));
+                    var closeTime = im.CloseTimeIso.Add(baseTimeOffset.Add(new TimeSpan(0, 23, 59, 59, 999)));
 
                     return targetVolumes
                         .Select(vol => ToTargetModel(vol, exchange, im.OpenPrice, pricePadding, openTime))

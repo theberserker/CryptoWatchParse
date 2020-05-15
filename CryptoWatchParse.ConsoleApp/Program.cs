@@ -55,7 +55,9 @@ namespace CryptoWatchParse.ConsoleApp
         {
             using (var httpClient = CreateHttpClient())
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"markets/bitstamp/bcheur/ohlc?after={from}&before={to}&periods=86400");
+                //string requestUri = $"markets/bitstamp/bcheur/ohlc?after={from}&before={to}&periods=86400";
+                string requestUri = "markets/bitstamp/bcheur/ohlc?periods=86400";
+                var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
                 var result = await httpClient.SendAsync(request);
                 if (!result.IsSuccessStatusCode)
                 {
